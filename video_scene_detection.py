@@ -9,6 +9,8 @@ from rapidfuzz import fuzz
 from dotenv import load_dotenv
 from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
 
 # Configure logging
 logging.basicConfig(
@@ -174,11 +176,44 @@ def create_collage(matching_scenes, image_folder, output_collage="collage.png"):
         collage.save(output_collage)
         logger.info(f"Collage saved to {output_collage}")
         collage.show()
-        
+
         return output_collage
     except Exception as e:
         logger.error(f"Error creating collage: {e}")
-        return None
+        return None 
+
+
+def extract_unique_words(captions_file):
+    """
+    Extract unique words from all captions for auto-complete suggestions.
+    """
+    try:
+        with open(captions_file, "r") as f:
+            captions = json.load(f)
+
+        # Extract all words from the captions
+        words = set()
+        for caption in captions.values():
+            for word in caption.split():
+                words.add(word.strip(",.!?").lower())  
+
+        return sorted(words)
+    except Exception as e:
+        logger.error(f"Error extracting words from captions: {e}")
+        return []
+
+
+def get_search_word_with_autocomplete(captions_file):
+    """
+    Prompt the user to input a search word with auto-complete suggestions.
+    """
+    words = extract_unique_words(captions_file)
+
+    word_completer = WordCompleter(words, ignore_case=True)
+
+    search_word = prompt("Search the video using a word: ", completer=word_completer)
+
+    return search_word.strip()
     
 if __name__ == "__main__":
     try:
@@ -207,7 +242,7 @@ if __name__ == "__main__":
                 raise RuntimeError("No scenes detected or saved.")          
         
         # Prompt user for a search word
-        search_word = input("Search the video using a word: ").strip()
+        search_word = get_search_word_with_autocomplete(captions_file)
 
         matching_scenes = search_captions(search_word, captions_file)
         if not matching_scenes:
