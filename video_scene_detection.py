@@ -173,6 +173,8 @@ def create_collage(matching_scenes, image_folder, output_collage="collage.png"):
 
         collage.save(output_collage)
         logger.info(f"Collage saved to {output_collage}")
+        collage.show()
+        
         return output_collage
     except Exception as e:
         logger.error(f"Error creating collage: {e}")
