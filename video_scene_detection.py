@@ -93,11 +93,6 @@ def generate_captions_with_moondream(num_scenes, image_folder, output_json="scen
     if not api_key:
         raise ValueError("API key not found. Make sure MOONDREAM_API_KEY is set in the .env file.")
 
-    # Check if captions JSON already exists
-    if os.path.exists(output_json):
-        logger.info(f"Captions already exist in {output_json}. Skipping caption generation.")
-        return output_json
-
     model = md.vl(api_key=api_key)
     captions = {}
 
@@ -108,7 +103,7 @@ def generate_captions_with_moondream(num_scenes, image_folder, output_json="scen
 
             image = Image.open(image_path)
            
-            caption = model.caption(image)["caption"]
+            caption = model.caption(image, length="short")["caption"]
             captions[scene_number] = caption
         except Exception as e:
             logger.error(f"Error generating caption for scene_{scene_number}.jpg: {e}")
@@ -133,16 +128,21 @@ if __name__ == "__main__":
         scenes_folder = "scene_image"
         captions_file = "scene_captions.json"
 
-        if not video_file or not scenes_folder:
-            raise ValueError("Both video file path and output folder path must be provided.")
-
-        num_scenes = detect_scenes(video_file, output_folder=scenes_folder)
-        if num_scenes > 0:
-            print(f"Saved images for {num_scenes} scenes in '{scenes_folder}'.")
-            generate_captions_with_moondream(num_scenes, scenes_folder, captions_file)
-            print(f"Captions generated and saved in '{captions_file}'.")
+         # Check if JSON file exists
+        if os.path.exists(captions_file):
+            logger.info(f"Captions file '{captions_file}' already exists. Skipping all processing.")
+            print(f"Captions already exist in '{captions_file}'.")
         else:
-            print("No scenes were detected or saved due to errors.")
+            if not video_file or not scenes_folder:
+                raise ValueError("Both video file path and output folder path must be provided.")
+
+            num_scenes = detect_scenes(video_file, output_folder=scenes_folder)
+            if num_scenes > 0:
+                print(f"Saved images for {num_scenes} scenes in '{scenes_folder}'.")
+                generate_captions_with_moondream(num_scenes, scenes_folder, captions_file)
+                print(f"Captions generated and saved in '{captions_file}'.")
+            else:
+                print("No scenes were detected or saved due to errors.")
     except Exception as e:
         logger.critical(f"Unexpected error: {e}")
         print("A critical error occurred. Please check the logs for more details.")
