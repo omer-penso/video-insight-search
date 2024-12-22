@@ -5,6 +5,7 @@ import json
 import moondream as md
 from PIL import Image
 from math import ceil
+from rapidfuzz import fuzz
 from dotenv import load_dotenv
 from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
@@ -122,9 +123,9 @@ def generate_captions_with_moondream(num_scenes, image_folder, output_json="scen
     return output_json
 
 
-def search_captions(search_word, captions_file):
+def search_captions(search_word, captions_file, threshold=70):
     """
-    Search for scenes containing the input word in the captions.
+    Search for scenes containing the input word in the captions using fuzzy matching.
     """
     try:
         with open(captions_file, "r") as f:
@@ -132,7 +133,8 @@ def search_captions(search_word, captions_file):
 
         matching_scenes = []
         for scene_number, caption in captions.items():
-            if search_word.lower() in caption.lower(): 
+            match_score = fuzz.partial_ratio(search_word.lower(), caption.lower())
+            if match_score >= threshold:
                 matching_scenes.append(int(scene_number))
 
         return matching_scenes
