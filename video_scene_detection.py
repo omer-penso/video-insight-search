@@ -4,6 +4,7 @@ import logging
 import json
 import moondream as md
 from PIL import Image
+from math import ceil
 from dotenv import load_dotenv
 from scenedetect import open_video, SceneManager
 from scenedetect.detectors import ContentDetector
@@ -88,6 +89,7 @@ def detect_scenes(video_path, output_folder, threshold=9.0, min_scene_length=0.6
         logger.error(f"Error in scene detection: {e}")
         return 0
 
+
 def generate_captions_with_moondream(num_scenes, image_folder, output_json="scene_captions.json"):
     api_key = os.getenv("MOONDREAM_API_KEY")
     if not api_key:
@@ -120,6 +122,60 @@ def generate_captions_with_moondream(num_scenes, image_folder, output_json="scen
     return output_json
 
 
+def search_captions(search_word, captions_file):
+    """
+    Search for scenes containing the input word in the captions.
+    """
+    try:
+        with open(captions_file, "r") as f:
+            captions = json.load(f)
+
+        matching_scenes = []
+        for scene_number, caption in captions.items():
+            if search_word.lower() in caption.lower(): 
+                matching_scenes.append(int(scene_number))
+
+        return matching_scenes
+    except Exception as e:
+        logger.error(f"Error searching captions: {e}")
+        return []
+
+
+def create_collage(matching_scenes, image_folder, output_collage="collage.png"):
+    """
+    Create a collage of images corresponding to the matching scenes.
+    """
+    try:
+        images = [
+            Image.open(os.path.join(image_folder, f"scene_{scene}.jpg"))
+            for scene in matching_scenes
+            if os.path.exists(os.path.join(image_folder, f"scene_{scene}.jpg"))
+        ]
+
+        if not images:
+            logger.warning("No valid images found for the given scenes.")
+            return None
+
+        img_width, img_height = images[0].size
+        cols = min(4, len(images))
+        rows = ceil(len(images) / cols)
+
+        # Create a blank canvas for the collage
+        collage = Image.new("RGB", (cols * img_width, rows * img_height))
+
+        # Paste images onto the collage
+        for idx, img in enumerate(images):
+            x = (idx % cols) * img_width
+            y = (idx // cols) * img_height
+            collage.paste(img, (x, y))
+
+        collage.save(output_collage)
+        logger.info(f"Collage saved to {output_collage}")
+        return output_collage
+    except Exception as e:
+        logger.error(f"Error creating collage: {e}")
+        return None
+    
 if __name__ == "__main__":
     try:
         load_dotenv()
@@ -127,8 +183,9 @@ if __name__ == "__main__":
         video_file = "The_Super_Mario_Trailer.mp4"
         scenes_folder = "scene_image"
         captions_file = "scene_captions.json"
+        collage_file = "collage.png"
 
-         # Check if JSON file exists
+        # Check if JSON file exists
         if os.path.exists(captions_file):
             logger.info(f"Captions file '{captions_file}' already exists. Skipping all processing.")
             print(f"Captions already exist in '{captions_file}'.")
@@ -143,6 +200,24 @@ if __name__ == "__main__":
                 print(f"Captions generated and saved in '{captions_file}'.")
             else:
                 print("No scenes were detected or saved due to errors.")
+                raise RuntimeError("No scenes detected or saved.")          
+        
+        # Prompt user for a search word
+        search_word = input("Search the video using a word: ").strip()
+
+        matching_scenes = search_captions(search_word, captions_file)
+        if not matching_scenes:
+            print(f"No scenes found for the word '{search_word}'.")
+            logger.info(f"No scenes found for the word '{search_word}'.")
+        else:
+            print(f"Scenes found for the word '{search_word}': {matching_scenes}")
+            logger.info(f"Scenes found for the word '{search_word}': {matching_scenes}")
+
+            collage_path = create_collage(matching_scenes, scenes_folder, collage_file)
+            if collage_path:
+                print(f"Collage created and saved as '{collage_path}'.")
+            else:
+                print("Failed to create collage.")
     except Exception as e:
         logger.critical(f"Unexpected error: {e}")
         print("A critical error occurred. Please check the logs for more details.")
