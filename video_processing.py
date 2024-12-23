@@ -6,6 +6,7 @@ from scenedetect.detectors import ContentDetector
 
 logger = logging.getLogger(__name__)
 
+
 def ensure_output_folder_exists(output_folder):
     try:
         if not os.path.exists(output_folder):
@@ -14,6 +15,7 @@ def ensure_output_folder_exists(output_folder):
     except Exception as e:
         logger.error(f"Error creating output folder: {e}")
         raise
+
 
 def open_video_file(video_path):
     try:
@@ -29,12 +31,12 @@ def open_video_file(video_path):
         logger.error(f"Error opening video file: {e}")
         raise
 
+
 def detect_scenes_in_video(video, fps, threshold, min_scene_length):
     try:
         scene_manager = SceneManager()
         scene_manager.add_detector(ContentDetector(threshold=threshold, min_scene_len=int(fps * min_scene_length)))
         scene_manager.detect_scenes(video)
-          # Extract the full scene list (start_time, end_time)
         full_scene_list = scene_manager.get_scene_list()
 
         # Extract only the start times as seconds (float)
@@ -44,7 +46,8 @@ def detect_scenes_in_video(video, fps, threshold, min_scene_length):
     except Exception as e:
         logger.error(f"Error detecting scenes: {e}")
         raise
-# to add that he will also get fps and then will go over the scene list and mult it to get the frame number
+
+
 def save_scene_images(video_path, fps, scenes_start_time_list, output_folder):
     try:
         cap = cv2.VideoCapture(video_path)
@@ -66,6 +69,7 @@ def save_scene_images(video_path, fps, scenes_start_time_list, output_folder):
     except Exception as e:
         logger.error(f"Error during frame extraction or saving: {e}")
         raise
+
 
 def detect_scenes(video_path, output_folder, threshold=9.0, min_scene_length=0.6):
     try:

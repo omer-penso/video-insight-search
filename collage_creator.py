@@ -5,6 +5,7 @@ from math import ceil
 
 logger = logging.getLogger(__name__)
 
+
 def create_collage(matching_scenes, image_folder, output_collage="collage.png"):
     try:
         images = [

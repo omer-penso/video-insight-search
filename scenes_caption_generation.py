@@ -9,6 +9,7 @@ from prompt_toolkit.completion import WordCompleter
 
 logger = logging.getLogger(__name__)
 
+
 def generate_captions_with_moondream(num_scenes, image_folder, output_json="scene_captions.json"):
     api_key = os.getenv("MOONDREAM_API_KEY")
     if not api_key:
@@ -36,6 +37,7 @@ def generate_captions_with_moondream(num_scenes, image_folder, output_json="scen
 
     return output_json
 
+
 def extract_unique_words(captions_file):
     try:
         with open(captions_file, "r") as f:
@@ -50,6 +52,7 @@ def extract_unique_words(captions_file):
     except Exception as e:
         logger.error(f"Error extracting words from captions: {e}")
         return []
+
 
 def search_captions(search_word, captions_file, threshold=70):
     try:
@@ -66,6 +69,7 @@ def search_captions(search_word, captions_file, threshold=70):
     except Exception as e:
         logger.error(f"Error searching captions: {e}")
         return []
+
 
 def get_search_word_with_autocomplete(captions_file):
     """
